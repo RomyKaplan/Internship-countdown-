@@ -1,0 +1,419 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Internship Countdown</title>
+  <style>
+    :root {
+      --bg: #0b0f1a;
+      --card: rgba(255,255,255,0.08);
+      --text: #e9eefc;
+      --muted: rgba(233,238,252,0.70);
+      --accent: #7aa2ff;
+      --border: rgba(255,255,255,0.12);
+    }
+    body {
+      margin: 0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+      background: radial-gradient(1200px 600px at 20% 10%, rgba(122,162,255,0.25), transparent 60%),
+                  radial-gradient(900px 500px at 80% 30%, rgba(122,162,255,0.18), transparent 55%),
+                  var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+    .wrap { width: min(920px, 100%); }
+    h1 { margin: 0 0 8px; font-size: clamp(26px, 4vw, 42px); letter-spacing: -0.02em; }
+    .sub { margin: 0 0 18px; color: var(--muted); line-height: 1.4; }
+    .grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 12px; }
+    .card {
+      grid-column: span 12;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 16px 16px 14px;
+      backdrop-filter: blur(10px);
+    }
+    @media (min-width: 760px) {
+      .card.span6 { grid-column: span 6; }
+      .card.span4 { grid-column: span 4; }
+      .card.span8 { grid-column: span 8; }
+    }
+    .label { font-size: 13px; color: var(--muted); margin-bottom: 10px; }
+    .value { font-size: 34px; font-weight: 700; letter-spacing: -0.03em; }
+    .value small { font-size: 16px; font-weight: 600; color: var(--muted); margin-left: 8px; }
+    .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    .pill {
+      display: inline-flex;
+      gap: 8px;
+      align-items: center;
+      border: 1px solid rgba(255,255,255,0.16);
+      border-radius: 999px;
+      padding: 8px 12px;
+      background: rgba(255,255,255,0.06);
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .pill strong { color: var(--text); font-weight: 700; }
+    .accent { color: var(--accent); }
+
+    .controls {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-top: 10px;
+    }
+    button {
+      border: 1px solid rgba(255,255,255,0.16);
+      background: rgba(255,255,255,0.06);
+      color: var(--text);
+      padding: 10px 12px;
+      border-radius: 12px;
+      cursor: pointer;
+    }
+    button:hover { border-color: rgba(255,255,255,0.28); }
+    input, .date {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.16);
+      color: var(--text);
+      padding: 10px 12px;
+      border-radius: 12px;
+    }
+    input[type="text"] { width: 260px; }
+    input[type="date"] { width: 190px; }
+
+    .footer { margin-top: 12px; color: var(--muted); font-size: 12px; line-height: 1.35; }
+
+    .bar {
+      margin-top: 10px;
+      height: 10px;
+      background: rgba(255,255,255,.12);
+      border-radius: 999px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,.10);
+    }
+    .bar > div {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #7aa2ff, #9ad0ff);
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1 id="pageTitle">Internship Countdown</h1>
+    <p class="sub">
+      Countdown + progress tracker (days passed/remaining, weeks, calendar months).
+      <br />Target: <span class="accent" id="targetLabel"></span>
+    </p>
+
+    <div class="grid">
+      <div class="card span8">
+        <div class="label">Setup</div>
+
+        <div class="row">
+          <span class="pill">Start: <strong id="startLabel">—</strong></span>
+          <span class="pill">End: <strong id="endLabel">—</strong></span>
+          <span class="pill">Now: <strong id="nowLabel">—</strong></span>
+        </div>
+
+        <div class="controls">
+          <input id="titleInput" type="text" placeholder="Optional: internship name" />
+          <button id="saveTitleBtn">Save title</button>
+        </div>
+
+        <div class="controls">
+          <label class="pill">
+            Start date
+            <input id="startDateInput" class="date" type="date" />
+          </label>
+          <label class="pill">
+            End date
+            <input id="endDateInput" class="date" type="date" />
+          </label>
+          <button id="saveDatesBtn">Save dates</button>
+          <button id="resetBtn">Reset</button>
+        </div>
+
+        <div class="footer">
+          Tip: “Months remaining” uses <b>calendar months</b> + leftover days (not 30-day months).
+        </div>
+      </div>
+
+      <div class="card span4">
+        <div class="label">Internship progress</div>
+        <div class="value" id="progressVal">—</div>
+        <div class="bar"><div id="progressBar"></div></div>
+        <div class="footer">Based on your saved start → end dates.</div>
+      </div>
+
+      <div class="card span4">
+        <div class="label">Days passed</div>
+        <div class="value" id="passedVal">—</div>
+      </div>
+
+      <div class="card span4">
+        <div class="label">Days remaining</div>
+        <div class="value" id="remainingVal">—</div>
+      </div>
+
+      <div class="card span4">
+        <div class="label">Total internship days</div>
+        <div class="value" id="totalVal">—</div>
+      </div>
+
+      <div class="card span6">
+        <div class="label">Weeks remaining</div>
+        <div class="value" id="weeksVal">—</div>
+        <div class="footer">Whole weeks, then leftover days.</div>
+      </div>
+
+      <div class="card span6">
+        <div class="label">Calendar months remaining</div>
+        <div class="value" id="monthsVal">—</div>
+        <div class="footer">Whole calendar months, then leftover days.</div>
+      </div>
+
+      <div class="card span6">
+        <div class="label">Exact time remaining</div>
+        <div class="value" id="hmsVal">—</div>
+        <div class="footer">Updates every second.</div>
+      </div>
+
+      <div class="card span6">
+        <div class="label">Status</div>
+        <div class="value" id="statusVal">—</div>
+        <div class="footer" id="statusNote"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ---------- STORAGE KEYS ----------
+    const KEY_TITLE = "internshipTitle_v1";
+    const KEY_START = "internshipStartISO_v1";
+    const KEY_END   = "internshipEndISO_v1";
+
+    // ---------- DEFAULTS ----------
+    // Default end date: September 1, 2026
+    const DEFAULT_END = new Date(2026, 8, 1, 0, 0, 0); // local time
+    // Default start date: today (you can change via the UI)
+    function startOfToday() {
+      const n = new Date();
+      return new Date(n.getFullYear(), n.getMonth(), n.getDate(), 0, 0, 0);
+    }
+    const DEFAULT_START = startOfToday();
+
+    // ---------- HELPERS ----------
+    const pad2 = (n) => String(n).padStart(2, "0");
+    const msPerDay = 24 * 60 * 60 * 1000;
+
+    function fmtLocal(d) {
+      return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())} ${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`;
+    }
+    function dateToISODate(d) {
+      return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
+    }
+    function parseISODateToLocalStart(isoDate) {
+      // isoDate: "YYYY-MM-DD" -> local midnight Date
+      const [y, m, day] = isoDate.split("-").map(Number);
+      return new Date(y, m - 1, day, 0, 0, 0);
+    }
+
+    // Whole calendar months between start and end, then leftover days.
+    function diffCalendarMonthsAndDays(start, end) {
+      if (end <= start) return { months: 0, days: 0 };
+
+      let months = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth());
+
+      const anchor = new Date(start);
+      anchor.setMonth(anchor.getMonth() + months);
+
+      if (anchor > end) {
+        months -= 1;
+        anchor.setMonth(anchor.getMonth() - 1);
+      }
+
+      const startDay = new Date(anchor.getFullYear(), anchor.getMonth(), anchor.getDate());
+      const endDay = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+      const days = Math.max(0, Math.floor((endDay - startDay) / msPerDay));
+
+      return { months, days };
+    }
+
+    function diffWeeksAndDays(totalDays) {
+      const weeks = Math.floor(totalDays / 7);
+      const days = totalDays % 7;
+      return { weeks, days };
+    }
+
+    function clamp(n, min, max) { return Math.max(min, Math.min(max, n)); }
+
+    // ---------- STATE LOAD/SAVE ----------
+    function loadState() {
+      const title = localStorage.getItem(KEY_TITLE) || "";
+      const startISO = localStorage.getItem(KEY_START);
+      const endISO = localStorage.getItem(KEY_END);
+
+      const start = startISO ? new Date(startISO) : DEFAULT_START;
+      const end = endISO ? new Date(endISO) : DEFAULT_END;
+
+      return { title, start, end };
+    }
+
+    function saveState({ title, start, end }) {
+      localStorage.setItem(KEY_TITLE, title || "");
+      localStorage.setItem(KEY_START, start.toISOString());
+      localStorage.setItem(KEY_END, end.toISOString());
+    }
+
+    function resetState() {
+      localStorage.removeItem(KEY_TITLE);
+      localStorage.removeItem(KEY_START);
+      localStorage.removeItem(KEY_END);
+    }
+
+    // ---------- UI INIT ----------
+    const el = (id) => document.getElementById(id);
+
+    function applyStateToInputs(state) {
+      el("titleInput").value = state.title || "";
+      el("startDateInput").value = dateToISODate(state.start);
+      el("endDateInput").value = dateToISODate(state.end);
+
+      const title = state.title?.trim();
+      el("pageTitle").textContent = title ? `${title} Countdown` : "Internship Countdown";
+      document.title = el("pageTitle").textContent;
+
+      el("targetLabel").textContent = state.end.toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" });
+    }
+
+    // ---------- RENDER ----------
+    function render() {
+      const now = new Date();
+      const state = loadState();
+
+      let start = state.start;
+      let end = state.end;
+
+      el("startLabel").textContent = fmtLocal(start);
+      el("endLabel").textContent = fmtLocal(end);
+      el("nowLabel").textContent = fmtLocal(now);
+      el("targetLabel").textContent = end.toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" });
+
+      // Validate dates
+      if (end <= start) {
+        el("statusVal").textContent = "Fix your dates";
+        el("statusNote").textContent = "End date must be after start date.";
+        el("progressVal").textContent = "—";
+        el("progressBar").style.width = "0%";
+        el("passedVal").textContent = "—";
+        el("remainingVal").textContent = "—";
+        el("totalVal").textContent = "—";
+        el("weeksVal").textContent = "—";
+        el("monthsVal").textContent = "—";
+        el("hmsVal").textContent = "—";
+        return;
+      }
+
+      const msTotal = end - start;
+      const totalDays = Math.ceil(msTotal / msPerDay);
+
+      // Passed time clamped to [0, total]
+      const msPassed = clamp(now - start, 0, msTotal);
+      const daysPassed = Math.floor(msPassed / msPerDay);
+
+      const msLeft = end - now;
+      const daysRemaining = Math.max(0, Math.ceil(msLeft / msPerDay));
+
+      const progress = clamp((msPassed / msTotal) * 100, 0, 100);
+
+      el("passedVal").textContent = String(daysPassed);
+      el("remainingVal").textContent = String(daysRemaining);
+      el("totalVal").textContent = String(totalDays);
+
+      el("progressVal").textContent = `${progress.toFixed(1)}%`;
+      el("progressBar").style.width = `${progress}%`;
+
+      // Weeks remaining
+      const { weeks, days } = diffWeeksAndDays(daysRemaining);
+      el("weeksVal").textContent = `${weeks} weeks, ${days} days`;
+
+      // Calendar months remaining (from now -> end)
+      const { months, days: mdays } = diffCalendarMonthsAndDays(now, end);
+      el("monthsVal").textContent = `${months} months, ${mdays} days`;
+
+      // Exact time remaining (HH:MM:SS of the remainder within the day)
+      if (msLeft <= 0) {
+        el("hmsVal").textContent = "00:00:00";
+      } else {
+        const totalSeconds = Math.max(0, Math.floor(msLeft / 1000));
+        const hrs = Math.floor((totalSeconds % (24*3600)) / 3600);
+        const mins = Math.floor((totalSeconds % 3600) / 60);
+        const secs = totalSeconds % 60;
+        el("hmsVal").textContent = `${pad2(hrs)}:${pad2(mins)}:${pad2(secs)}`;
+      }
+
+      // Status
+      if (now < start) {
+        el("statusVal").textContent = "Not started yet";
+        el("statusNote").textContent = "Days passed will stay at 0 until the start date.";
+      } else if (now >= end) {
+        el("statusVal").textContent = "Completed ✅";
+        el("statusNote").textContent = "Countdown reached the end date.";
+      } else {
+        el("statusVal").textContent = "In progress";
+        el("statusNote").textContent = "You’re on your way.";
+      }
+    }
+
+    // ---------- EVENTS ----------
+    el("saveTitleBtn").addEventListener("click", () => {
+      const state = loadState();
+      const title = el("titleInput").value.trim();
+      saveState({ title, start: state.start, end: state.end });
+      applyStateToInputs(loadState());
+      render();
+    });
+
+    el("saveDatesBtn").addEventListener("click", () => {
+      const state = loadState();
+      const title = state.title || "";
+
+      const startISO = el("startDateInput").value;
+      const endISO = el("endDateInput").value;
+
+      const start = startISO ? parseISODateToLocalStart(startISO) : DEFAULT_START;
+      const end = endISO ? parseISODateToLocalStart(endISO) : DEFAULT_END;
+
+      saveState({ title, start, end });
+      applyStateToInputs(loadState());
+      render();
+    });
+
+    el("resetBtn").addEventListener("click", () => {
+      resetState();
+      applyStateToInputs(loadState());
+      render();
+    });
+
+    // ---------- BOOT ----------
+    // Initialize saved defaults if none exist
+    (function bootstrap() {
+      const existingStart = localStorage.getItem(KEY_START);
+      const existingEnd = localStorage.getItem(KEY_END);
+      if (!existingStart || !existingEnd) {
+        const state = loadState();
+        saveState({ title: state.title || "", start: state.start, end: state.end });
+      }
+      applyStateToInputs(loadState());
+      render();
+      setInterval(render, 1000);
+    })();
+  </script>
+</body>
+</html>
